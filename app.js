@@ -1,7 +1,8 @@
 const express=require("express");
 const bodyParser=require("body-parser");
-const mongoose=require("mongoose")
-const app=express()
+const mongoose = require("mongoose");
+const _ = require("lodash");
+const app = express()
 
 
 // const items=["Khana","Peena","Sona"];
@@ -25,15 +26,15 @@ const itemsSchema={
 const Item=mongoose.model("Item",itemsSchema)
 
 const item1=new Item({
-    name:"Welcome to your todoList"
+    name:"Khana"
 });
 
 const item2=new Item({
-    name:"Hit the + button to add a new Item"
+    name:"Peena"
 });
 
 const item3=new Item({
-    name:"<-- Hit this to delete an item"
+    name:"Sonaa"
 });
 
 
@@ -74,7 +75,9 @@ app.get("/",(req,res)=>{
 
 // for creating a new list in localhost
 app.get("/:customListName", (req, res) => {
-    const customListName = req.params.customListName;
+
+    const customListName = _.capitalize(req.params.customListName);
+
     List.findOne({ name: customListName }, (err, foundList) => {
         if (!err) {
             if (!foundList) {
@@ -121,14 +124,24 @@ app.post("/",(req,res)=>{
 })
 
 app.post("/delete",function(req,res){
-    const checkedItemId=req.body.checkbox;
-    Item.findByIdAndRemove(checkedItemId,function(err){
-        if(!err){
-            console.log("success");
-            res.redirect("/")
-        }
-    });
-    
+    const checkedItemId = req.body.checkbox;
+    const listName = req.body.listName;
+
+    if (listName === "Today") {
+       Item.findByIdAndRemove(checkedItemId, function (err) {
+           if (!err) {
+               console.log("success");
+               res.redirect("/")
+           }
+       });
+    } else {
+        List.findOneAndUpdate({ name: listName }, { $pull: { items: { _id: checkedItemId } } }, function (err, foundList) {
+            if (!err) {
+                res.redirect("/" + listName)
+            }
+        });
+    }
+
 });
 
 
